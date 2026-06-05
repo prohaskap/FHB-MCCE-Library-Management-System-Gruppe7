@@ -1,0 +1,10 @@
+// vitest.config.js
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    include: ["tests/unit/**/*.test.js"],
+    environment: "node",
+    reporters: ["default", ["junit", { outputFile: "test-results/vitest-junit.xml" }]],
+  },
+});

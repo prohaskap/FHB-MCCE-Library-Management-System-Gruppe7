@@ -1,0 +1,108 @@
+name: Test Suite G7
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  BASE_URL: http://localhost:3000
+
+jobs:
+  test:
+    name: Run all test layers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # ---- Stage 1: Checkout + Node 22 Setup ---------------------------------
+      - name: Checkout repository (SUT + tests)
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # ---- Stage 2: Install all dependencies (SUT + test stack) -------------
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # ---- Stage 3: Seed the in-memory database -----------------------------
+      - name: Seed database
+        run: npm run seed
+
+      # ---- Stage 4: Start SUT in background ---------------------------------
+      - name: Start SUT
+        run: |
+          npm start > sut.log 2>&1 &
+          echo "SUT_PID=$!" >> $GITHUB_ENV
+
+      - name: Wait for SUT to be ready
+        run: npx --yes wait-on http://localhost:3000 --timeout 60000
+
+      # ---- Stage 5: Run test suite ------------------------------------------
+      - name: Run unit tests (Vitest)
+        run: npm run test:unit
+        continue-on-error: true
+        id: unit
+
+      - name: Run API tests
+        run: npm run test:api
+        continue-on-error: true
+        id: api
+
+      - name: Run integration tests
+        run: npm run test:integration
+        continue-on-error: true
+        id: integration
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        continue-on-error: true
+        id: e2e
+
+      # ---- Stage 6: Publish reports + status --------------------------------
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 14
+
+      - name: Upload JUnit XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-results
+          path: test-results
+          retention-days: 14
+
+      - name: Upload SUT log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sut-log
+          path: sut.log
+          retention-days: 7
+
+      - name: Fail workflow on any test failure
+        if: |
+          steps.unit.outcome == 'failure' ||
+          steps.api.outcome == 'failure' ||
+          steps.integration.outcome == 'failure' ||
+          steps.e2e.outcome == 'failure'
+        run: |
+          echo "::error::At least one test layer failed:"
+          echo "  unit:        ${{ steps.unit.outcome }}"
+          echo "  api:         ${{ steps.api.outcome }}"
+          echo "  integration: ${{ steps.integration.outcome }}"
+          echo "  e2e:         ${{ steps.e2e.outcome }}"
+          exit 1
