@@ -6,12 +6,25 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "test": "npm run test:unit && npm run test:api && npm run test:integration && npm run test:e2e",
+    "test:unit": "vitest run",
+    "test:api": "playwright test tests/api",
+    "test:integration": "playwright test tests/integration",
+    "test:e2e": "playwright test tests/e2e",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "express": "^4.18.3",
     "sql.js": "^1.12.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
