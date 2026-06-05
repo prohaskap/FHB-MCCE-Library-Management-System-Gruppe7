@@ -127,4 +127,50 @@ test.describe("Waitlist Promotion @api", () => {
     snapshot = await getBook(request, book.id);
     expect(snapshot.availableCopies).toBe(1);
   });
+
+  // TC-G7-033 — Negative
+  test("TC-G7-033 returning a non-existent loan returns 404", async ({ request }) => {
+    const res = await request.post("/api/loans/999999/return");
+    expect(res.status()).toBe(404);
+  });
+
+  // TC-G7-034 — Negative
+  test("TC-G7-034 returning an already-returned loan returns 409", async ({ request }) => {
+    const book = await createBook(request, { totalCopies: 1 });
+    const member = await createMember(request);
+    const loan = await createLoan(request, book.id, member.id);
+
+    await returnLoan(request, loan.id);
+
+    const res = await request.post(`/api/loans/${loan.id}/return`);
+    expect(res.status()).toBe(409);
+  });
+
+  // TC-G7-035 — Negative
+  test("TC-G7-035 cancelling a non-existent reservation returns 404", async ({ request }) => {
+    const res = await request.post("/api/reservations/999999/cancel");
+    expect(res.status()).toBe(404);
+  });
+
+  // TC-G7-036 — Negative
+  test("TC-G7-036 cancelling an already-cancelled reservation returns 409", async ({ request }) => {
+    const book = await createBook(request, { totalCopies: 1 });
+    const borrower = await createMember(request);
+    const reserver = await createMember(request);
+
+    await createLoan(request, book.id, borrower.id);
+    const reservation = await createReservation(request, book.id, reserver.id);
+
+    const first = await request.post(`/api/reservations/${reservation.id}/cancel`);
+    expect(first.ok()).toBeTruthy();
+
+    const second = await request.post(`/api/reservations/${reservation.id}/cancel`);
+    expect(second.status()).toBe(409);
+  });
+
+  // TC-G7-038 — Negative
+  test("TC-G7-038 retrieving a non-existent reservation returns 404", async ({ request }) => {
+    const res = await request.get("/api/reservations/999999");
+    expect(res.status()).toBe(404);
+  });
 });

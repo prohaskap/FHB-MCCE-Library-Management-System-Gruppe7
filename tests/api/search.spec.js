@@ -105,4 +105,21 @@ test.describe("Search Members @api", () => {
     expect(Array.isArray(body)).toBe(true);
     expect(body.some((m) => m.email === member.email)).toBe(true);
   });
+
+  // TC-G7-040 — Boundary
+  test("TC-G7-040 book search with empty q returns a paginated response, not an error", async ({ request }) => {
+    const res = await request.get("/api/search/books?q=");
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(typeof body.total).toBe("number");
+    expect(Array.isArray(body.results)).toBe(true);
+  });
+
+  // TC-G7-041 — Boundary
+  test("TC-G7-041 member search with empty q returns an array, not an error", async ({ request }) => {
+    const res = await request.get("/api/search/members?q=");
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body)).toBe(true);
+  });
 });
