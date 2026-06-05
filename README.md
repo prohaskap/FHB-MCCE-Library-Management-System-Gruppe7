@@ -1,174 +1,130 @@
-# Library Management System
+# FHB MCCE — Library Management System, Gruppe F (Domain G7)
 
-System under test for the **FHB MCCE Test Automation** course.
+Test-Suite für die Domäne **Waitlist Promotion, Search & Reports** des
+Library Management Systems der FHB-MCCE-Lehrveranstaltung *Test Automation*.
 
----
+Das System Under Test (SUT) liegt im selben Repository (Verzeichnis `src/`)
+und ist nicht Teil unseres Beitrags; wir testen es, ändern es nicht.
 
-## What the app does
+## Domänen-Abdeckung
 
-The system models the operations of a public lending library:
+| Bereich | Endpoints |
+|---|---|
+| Waitlist Promotion | `POST /api/loans/:id/return`, `GET /api/reservations/:id` |
+| Search | `GET /api/search/books`, `GET /api/search/members` |
+| Reports | `GET /api/reports/members/:id/history`, `…/stats`, `/books/top`, `/loans/overdue` |
 
-- Members borrow and return books
-- Late fees accrue at €0.50/day, capped at €20.00
-- Books that are fully borrowed out can be reserved; the first reservation in the queue is automatically promoted when a copy is returned
-- A documented REST API covers all operations
-- A web UI provides access to all features
+Insgesamt **32 Testfälle** (TC-G7-001 bis TC-G7-032) auf vier Ebenen.
+Details: siehe Test-Strategy-Document.
 
----
+## Voraussetzungen
 
-## Prerequisites
+| Werkzeug | Version |
+|---|---|
+| Node.js | 22 oder neuer |
+| npm | mit Node.js mitgeliefert |
 
-| Requirement | Version |
-|-------------|---------|
-| [Node.js](https://nodejs.org/) | 18 or newer |
-| npm | included with Node.js |
-
-No database server, no Docker, no Python required.
-
----
+Keine Datenbank, kein Docker, kein Python erforderlich.
 
 ## Installation
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/horvathkevin/FHB-MCCE-Library-Management-System-Student.git
-cd FHB-MCCE-Library-Management-System-Student
-
-# 2. Install dependencies
 npm install
-
-# 3. Seed the database with example data
-npm run seed
-
-# 4. Start the server
-npm start
+npx playwright install --with-deps chromium
 ```
 
-The server starts on **http://localhost:3000**.
+## SUT starten
 
----
+```bash
+npm run seed     # DB auf bekannten Ausgangszustand zurücksetzen
+npm start        # startet den Server auf http://localhost:3000
+```
 
-## URLs
+`npm run seed` setzt die SQLite-Datei `library.db` zurück und lädt
+Beispiel-Daten. Vor jedem Test-Lauf empfohlen.
 
-| URL | What's there |
-|-----|-------------|
-| `http://localhost:3000` | Web UI |
-| `http://localhost:3000/api-docs` | Swagger UI — interactive API documentation |
-| `http://localhost:3000/api-docs.json` | Raw OpenAPI spec (importable into Postman etc.) |
+## Tests ausführen
 
----
+### Gesamte Suite
 
-## Available scripts
+```bash
+npm test
+```
 
-| Command | Description |
-|---------|-------------|
-| `npm start` | Start the server |
-| `npm run dev` | Start with auto-restart on file changes |
-| `npm run seed` | Wipe the database and re-seed with example data |
+Führt nacheinander Unit-, API-, Integration- und E2E-Tests aus.
+Voraussetzung: SUT läuft auf `http://localhost:3000`.
 
-> Run `npm run seed` before each testing session to reset the database to a known, clean state.
+### Einzelne Test-Ebene
 
----
+```bash
+npm run test:unit          # Vitest, ohne SUT
+npm run test:api           # Playwright, tests/api
+npm run test:integration   # Playwright, tests/integration
+npm run test:e2e           # Playwright, tests/e2e (Chromium headless)
+```
 
-## Seed data
+### Einzelner Test oder Gruppe
 
-The seed script populates the database with realistic example data:
+```bash
+# Playwright nach Test-Titel filtern (TC-ID oder Stichwort)
+npx playwright test -g "TC-G7-007"
+npx playwright test -g "FIFO"
 
-| Entity | Count |
-|--------|-------|
-| Books | 61 |
-| Members | 55 (50 active, 5 inactive) |
-| Loans | 55 (active, returned on time, returned late, overdue) |
-| Reservations | 55 (pending, ready, cancelled) |
+# Vitest nach Titel filtern
+npx vitest run -t "TC-G7-031"
+```
 
----
+## Test-Reports lesen
 
-## API overview
+| Report | Pfad / Befehl |
+|---|---|
+| Playwright HTML-Report | `npm run test:report` (öffnet im Browser) |
+| Playwright Raw-Output | `playwright-report/` |
+| JUnit XML (Playwright) | `test-results/junit.xml` |
+| JUnit XML (Vitest) | `test-results/vitest-junit.xml` |
 
-| Base path | Domain |
-|-----------|--------|
-| `GET/POST /api/books` | Book catalog |
-| `GET/PUT/DELETE /api/books/:id` | Single book |
-| `GET/POST /api/members` | Members |
-| `GET/PUT/DELETE /api/members/:id` | Single member |
-| `POST /api/members/:id/activate` | Reactivate a member |
-| `POST /api/members/:id/deactivate` | Deactivate a member |
-| `GET/POST /api/loans` | Loans (borrow) |
-| `GET /api/loans/:id` | Single loan |
-| `POST /api/loans/:id/return` | Return a book |
-| `GET /api/loans/:id/fee` | Calculate current fee |
-| `GET/POST /api/reservations` | Reservations |
-| `POST /api/reservations/:id/cancel` | Cancel a reservation |
-| `GET /api/search/books` | Search books by title, author, ISBN, genre |
-| `GET /api/search/members` | Search members by name or email |
-| `GET /api/reports/members/:id/history` | Loan history for a member |
-| `GET /api/reports/members/:id/stats` | Loan statistics for a member |
-| `GET /api/reports/books/top` | Most borrowed books |
-| `GET /api/reports/loans/overdue` | All currently overdue loans |
+In der CI werden HTML- und JUnit-Reports als Artefakte des Pipeline-Laufs
+veröffentlicht und können dort heruntergeladen werden.
 
-Full request/response documentation is available in the Swagger UI.
+## Bekannte Limitierungen
 
----
+- **TC-G7-025** ist mit `test.skip()` markiert. Der Test bräuchte einen
+  Test-Helper-Endpoint, um das Fälligkeitsdatum eines Loans rückwirkend zu
+  setzen; das SUT bietet keinen solchen Endpoint an. Dokumentiert im
+  Test-Strategy-Document, Kapitel 8.3.
+- **TC-G7-030** prüft aus demselben Grund nur, dass die Overdue-Liste
+  gerendert wird, nicht eine bestimmte Anzahl überfälliger Loans.
 
-## Business rules
+## CI/CD
 
-### Books
-- ISBN must be a valid 10- or 13-digit number and is unique
-- Publication year cannot be in the future
-- A book with active loans cannot be deleted
+GitHub Actions, definiert in `.github/workflows/test.yml`.
+Trigger: Push auf `main`, Pull Request gegen `main`, manuell.
 
-### Members
-- Email address is unique per member
-- Members can be deactivated — inactive members cannot borrow or reserve
-- A member with active loans cannot be deleted
+Pipeline-Schritte: Checkout → Node 22 + Playwright-Browser → `npm run seed`
+→ SUT im Hintergrund starten → `npm test` (alle vier Ebenen) → HTML- und
+JUnit-Reports als Artefakte.
 
-### Borrowing
-- A book can only be borrowed if at least one copy is available
-- A member may not borrow the same book twice simultaneously
-- A member may hold at most **5 active loans**
-- Loans are due **14 days** after the borrow date
-
-### Late fees
-- Fee: **€0.50 per day** overdue
-- Maximum fee: **€20.00** per loan
-- Fee is calculated and frozen at the moment of return
-
-### Reservations
-- A book can only be reserved when all copies are currently on loan
-- A member may hold at most **3 active reservations**
-- Reservations are fulfilled in **FIFO order**
-- When a book is returned, the oldest pending reservation is automatically promoted to "ready"
-
----
-
-## Assignment
-
-The group assignment document is available in [`docs/FHB-MCCE-Group-Assignment.docx`](docs/FHB-MCCE-Group-Assignment.docx).
-
-It describes your group's assigned domain, the business rules you must cover, and all submission requirements.
-
----
-
-## Project structure
+## Repository-Struktur
 
 ```
-├── src/
-│   ├── server.js           # Entry point
-│   ├── app.js              # Express app + Swagger setup
-│   ├── db.js               # SQLite database wrapper
-│   ├── fees.js             # Late fee calculation logic
-│   └── routes/
-│       ├── books.js
-│       ├── members.js
-│       ├── loans.js
-│       ├── reservations.js
-│       ├── search.js
-│       └── reports.js
-├── public/
-│   ├── index.html          # Single-page web UI
-│   └── app.js              # Frontend JavaScript
-├── docs/
-│   └── FHB-MCCE-Group-Assignment.docx
-├── seed.js                 # Database seeding script
+.
+├── src/                          # SUT (Vorlage, unverändert)
+├── public/                       # SUT-Frontend (Vorlage, unverändert)
+├── seed.js                       # SUT-Seed-Skript (Vorlage)
+├── helpers/                      # Test-Helper
+│   ├── api-helpers.js            # createBook, createLoan, … gegen die API
+│   └── promotion.js              # Pure Funktionen für Unit-Tests
+├── tests/
+│   ├── unit/                     # Vitest (TC-031, 032)
+│   ├── api/                      # Playwright, API-Layer (TC-001–022)
+│   ├── integration/              # Mehrschritt-Flows (TC-023–027)
+│   └── e2e/                      # Browser-E2E (TC-028–030)
+├── .github/workflows/test.yml    # CI/CD-Pipeline
+├── playwright.config.js
+├── vitest.config.js
 └── package.json
 ```
+
+## Gruppe F
+
+Patrick Prohaska, Ronald Ley, Alexander Mihai, Marco Reeh.
