@@ -74,17 +74,58 @@ npx playwright test -g "FIFO"
 npx vitest run -t "TC-G7-031"
 ```
 
-## Test-Reports lesen
+## Test-Ergebnisse einsehen
 
-| Report | Pfad / Befehl |
+Was wo sichtbar ist:
+
+### Im GitHub-Browser (kein CLI nötig)
+
+- **Tab „Actions"**: Liste aller Pipeline-Läufe mit grün/rot-Status.
+- **Einzelner Run** → Job „Run all test layers": die einzelnen Steps
+  (Setup → Seed → Start SUT → unit/api/integration/e2e → Reports). Pro
+  Step öffnet ein Klick die vollständigen Live-Logs der Konsole, also
+  z.B. die Liste aller 22 API-Tests mit Laufzeit und Pass/Fail.
+- **Tab „Checks" am Pull Request**: zeigt den Workflow-Status für den
+  PR und linkt direkt zum Run.
+- **Im Run-Footer „Artifacts"**: drei ZIP-Pakete zum Herunterladen
+  (in der UI nur Download, kein In-Browser-Rendering):
+  - `playwright-report` — der vollständige HTML-Bericht aller
+    Playwright-Tests (API + Integration + E2E)
+  - `junit-results` — JUnit-XML für Playwright und Vitest, für
+    maschinelle Weiterverarbeitung
+  - `sut-log` — nur vorhanden, falls der Run rot war; enthält die
+    Konsolen-Ausgabe des SUT
+
+Der HTML-Report kann von GitHub nicht direkt im Browser angezeigt werden:
+ZIP herunterladen, entpacken, `index.html` lokal öffnen.
+
+### Lokal nach `npm test`
+
+| Was | Befehl / Pfad |
 |---|---|
-| Playwright HTML-Report | `npm run test:report` (öffnet im Browser) |
-| Playwright Raw-Output | `playwright-report/` |
+| Playwright HTML-Report im Browser öffnen | `npm run test:report` |
+| Playwright HTML-Report im Dateisystem | `playwright-report/index.html` |
 | JUnit XML (Playwright) | `test-results/junit.xml` |
 | JUnit XML (Vitest) | `test-results/vitest-junit.xml` |
+| Konsolen-Output aller Tests | Ausgabe direkt von `npm test` im Terminal |
 
-In der CI werden HTML- und JUnit-Reports als Artefakte des Pipeline-Laufs
-veröffentlicht und können dort heruntergeladen werden.
+Im Playwright HTML-Report links auf den **Projekt-Filter** klicken
+(`api`, `integration`, `e2e-chromium`) und sich auf eine Test-Ebene
+einschränken. Tests sind nach TC-ID benannt (`TC-G7-007 …`), sodass
+sich Eintrag und Test-Plan-Tabelle eindeutig zuordnen lassen.
+
+### CI-Artefakte per CLI ziehen
+
+Wenn du den HTML-Report aus einem GitHub-Run lokal anschauen willst,
+ohne über die Web-UI zu gehen:
+
+```bash
+gh run list --limit 5                       # letzte Runs mit IDs
+gh run view <run-id>                        # Status + Schritte
+gh run view <run-id> --log                  # vollständige Step-Logs
+gh run download <run-id> --dir ci-results   # alle Artefakte herunterladen
+open ci-results/playwright-report/index.html
+```
 
 ## Bekannte Limitierungen
 
