@@ -14,8 +14,9 @@ und ist nicht Teil unseres Beitrags; wir testen es, ändern es nicht.
 | Search | `GET /api/search/books`, `GET /api/search/members` |
 | Reports | `GET /api/reports/members/:id/history`, `…/stats`, `/books/top`, `/loans/overdue` |
 
-Insgesamt **32 Testfälle** (TC-G7-001 bis TC-G7-032) auf vier Ebenen.
-Details: siehe Test-Strategy-Document.
+Insgesamt **41 Testfälle** (TC-G7-001 bis TC-G7-041) auf vier Ebenen.
+Verteilung: 26 Positive, 9 Negative (Fehlerpfade mit erwartetem 4xx),
+6 Boundary. Details: siehe Test-Strategy-Document.
 
 ## Voraussetzungen
 

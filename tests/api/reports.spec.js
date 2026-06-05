@@ -125,4 +125,19 @@ test.describe("Reports @api", () => {
     const ids = overdue.map((l) => l.id);
     expect(ids).not.toContain(loan.id);
   });
+
+  // TC-G7-037 — Negative
+  test("TC-G7-037 statistics for a non-existing member id returns 404", async ({ request }) => {
+    const res = await request.get("/api/reports/members/999999/stats");
+    expect(res.status()).toBe(404);
+  });
+
+  // TC-G7-039 — Boundary
+  test("TC-G7-039 top-borrowed books with limit=1 returns at most one entry", async ({ request }) => {
+    const res = await request.get("/api/reports/books/top?limit=1");
+    expect(res.status()).toBe(200);
+    const top = await res.json();
+    expect(Array.isArray(top)).toBe(true);
+    expect(top.length).toBeLessThanOrEqual(1);
+  });
 });
