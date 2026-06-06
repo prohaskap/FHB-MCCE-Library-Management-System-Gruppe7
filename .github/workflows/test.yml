@@ -19,10 +19,10 @@ jobs:
     steps:
       # ---- Stage 1: Checkout + Node 22 Setup ---------------------------------
       - name: Checkout repository (SUT + tests)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
@@ -71,7 +71,7 @@ jobs:
       # ---- Stage 6: Publish reports + status --------------------------------
       - name: Upload Playwright HTML report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report
@@ -79,7 +79,7 @@ jobs:
 
       - name: Upload JUnit XML
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: junit-results
           path: test-results
@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload SUT log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sut-log
           path: sut.log
