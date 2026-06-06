@@ -1,4 +1,4 @@
-# FHB MCCE — Library Management System, Gruppe F (Domain G7)
+# FHB MCCE — Library Management System, Gruppe F (Beispiel G7)
 
 Test-Suite für die Domäne **Waitlist Promotion, Search & Reports** des
 Library Management Systems der FHB-MCCE-Lehrveranstaltung *Test Automation*.
@@ -85,7 +85,7 @@ Was wo sichtbar ist:
 - **Einzelner Run** → Job „Run all test layers": die einzelnen Steps
   (Setup → Seed → Start SUT → unit/api/integration/e2e → Reports). Pro
   Step öffnet ein Klick die vollständigen Live-Logs der Konsole, also
-  z.B. die Liste aller 22 API-Tests mit Laufzeit und Pass/Fail.
+  z.B. die Liste aller 31 API-Tests mit Laufzeit und Pass/Fail.
 - **Tab „Checks" am Pull Request**: zeigt den Workflow-Status für den
   PR und linkt direkt zum Run.
 - **Im Run-Footer „Artifacts"**: drei ZIP-Pakete zum Herunterladen
@@ -157,10 +157,10 @@ JUnit-Reports als Artefakte.
 │   ├── api-helpers.js            # createBook, createLoan, … gegen die API
 │   └── promotion.js              # Pure Funktionen für Unit-Tests
 ├── tests/
-│   ├── unit/                     # Vitest (TC-031, 032)
-│   ├── api/                      # Playwright, API-Layer (TC-001–022)
-│   ├── integration/              # Mehrschritt-Flows (TC-023–027)
-│   └── e2e/                      # Browser-E2E (TC-028–030)
+│   ├── unit/                     # Vitest (TC-G7-031, TC-G7-032)
+│   ├── api/                      # Playwright, API-Layer (TC-G7-001 bis TC-G7-022 und TC-G7-033 bis TC-G7-041)
+│   ├── integration/              # Mehrschritt-Flows (TC-G7-023 bis TC-G7-027)
+│   └── e2e/                      # Browser-E2E (TC-G7-028 bis TC-G7-030)
 ├── .github/workflows/test.yml    # CI/CD-Pipeline
 ├── playwright.config.js
 ├── vitest.config.js
