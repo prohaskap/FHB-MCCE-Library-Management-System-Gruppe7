@@ -98,19 +98,33 @@ test.describe("Reports @api", () => {
   });
 
   // TC-G7-021
-  test("TC-G7-021 overdue report contains only active loans with dueDate in the past", async ({ request }) => {
+  test("TC-G7-021 overdue report contains only active loans with past dueDate and excludes a fresh not-overdue loan", async ({ request }) => {
+    // Arrange: own fixture that is definitely NOT overdue (default dueDate = today + 14 days)
+    const member = await createMember(request);
+    const book = await createBook(request, { totalCopies: 1 });
+    const freshLoan = await createLoan(request, book.id, member.id);
+
+    // Act
     const res = await request.get("/api/reports/loans/overdue");
     expect(res.status()).toBe(200);
     const overdue = await res.json();
     expect(Array.isArray(overdue)).toBe(true);
 
+    // Negative direction (BR6): the freshly created not-overdue loan must be excluded
+    const overdueIds = overdue.map((l) => l.id);
+    expect(overdueIds).not.toContain(freshLoan.id);
+
+    // Positive direction (BR6): list must be non-empty (seed has 10 overdue loans),
+    // so the test cannot pass vacuously on an empty response
+    expect(overdue.length).toBeGreaterThan(0);
+
+    // Every returned entry must satisfy BR6
     const now = Date.now();
     for (const loan of overdue) {
       expect(loan.status).toBe("active");
-      const due = new Date(loan.dueDate).getTime();
-      expect(due).toBeLessThan(now);
+      expect(new Date(loan.dueDate).getTime()).toBeLessThan(now);
     }
-  });
+});
 
   // TC-G7-022
   test("TC-G7-022 overdue report excludes returned loans", async ({ request }) => {
