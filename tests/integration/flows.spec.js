@@ -78,8 +78,10 @@ test.describe("Integration / Multi-Step Flows @integration", () => {
     const res = await request.get("/api/reports/loans/overdue");
     expect(res.status()).toBe(200);
     const overdue = await res.json();
-    const ids = overdue.map((l) => l.id);
-    expect(ids).toContain(loan.id);
+    const entry = overdue.find((l) => l.id === loan.id);
+    expect(entry).toBeTruthy();
+    // 15 days overdue must have accrued a positive fee (documented expected result)
+    expect(entry.accruedFee).toBeGreaterThan(0);
   });
 
   // TC-G7-026
