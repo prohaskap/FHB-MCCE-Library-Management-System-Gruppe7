@@ -85,8 +85,16 @@ jobs:
           path: test-results
           retention-days: 14
 
+      # failure() alone never fires here: the test steps run with
+      # continue-on-error, so the job is still "successful" at this point.
+      # Check the step outcomes directly, keep failure() for setup steps.
       - name: Upload SUT log on failure
-        if: failure()
+        if: |
+          failure() ||
+          steps.unit.outcome == 'failure' ||
+          steps.api.outcome == 'failure' ||
+          steps.integration.outcome == 'failure' ||
+          steps.e2e.outcome == 'failure'
         uses: actions/upload-artifact@v7
         with:
           name: sut-log
