@@ -2,7 +2,7 @@
 const { test, expect } = require("@playwright/test");
 const {
   createBook, createMember, createLoan, returnLoan,
-  createReservation, cancelReservation, getReservation, sleep,
+  createReservation, cancelReservation, getReservation, waitForNextSecond,
 } = require("../../helpers/api-helpers");
 
 test.describe("Integration / Multi-Step Flows @integration", () => {
@@ -23,7 +23,7 @@ test.describe("Integration / Multi-Step Flows @integration", () => {
     const loan2 = await createLoan(request, book.id, borrower2.id);
 
     const rA = await createReservation(request, book.id, reserverA.id);
-    await sleep(40);
+    await waitForNextSecond(); // createdAt has second precision — rB must land in a later second
     const rB = await createReservation(request, book.id, reserverB.id);
 
     // First return promotes the oldest pending reservation (rA)
@@ -48,7 +48,7 @@ test.describe("Integration / Multi-Step Flows @integration", () => {
 
     const loan = await createLoan(request, book.id, borrower.id);
     const rA = await createReservation(request, book.id, reserverA.id);
-    await sleep(40);
+    await waitForNextSecond();
     const rB = await createReservation(request, book.id, reserverB.id);
 
     await cancelReservation(request, rA.id);
