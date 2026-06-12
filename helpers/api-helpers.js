@@ -89,12 +89,22 @@ async function getReservation(request, reservationId) {
   return await res.json();
 }
 
-/**
- * Sleep helper for FIFO ordering, since createdAt is server-assigned.
- * Used sparingly; only where deterministic ordering matters.
- */
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Waits until the wall clock has entered the next full second (plus a small
+ * safety margin). The SUT stores reservation createdAt via SQLite
+ * datetime('now'), which has SECOND precision: two reservations created
+ * within the same second get identical createdAt values, and the FIFO
+ * promotion order would silently fall back to row insertion order instead
+ * of the timestamp. Crossing a real second boundary guarantees a strictly
+ * later createdAt for the next created reservation (tests and SUT share
+ * the same host clock).
+ */
+async function waitForNextSecond() {
+  await sleep(1000 - (Date.now() % 1000) + 50);
 }
 
 module.exports = {
@@ -110,4 +120,5 @@ module.exports = {
   getBook,
   getReservation,
   sleep,
+  waitForNextSecond,
 };

@@ -2,7 +2,7 @@
 const { test, expect } = require("@playwright/test");
 const {
   createBook, createMember, createLoan, returnLoan,
-  createReservation, getReservation, getBook, sleep,
+  createReservation, getReservation, getBook, waitForNextSecond,
 } = require("../../helpers/api-helpers");
 
 test.describe("Waitlist Promotion @api", () => {
@@ -32,7 +32,7 @@ test.describe("Waitlist Promotion @api", () => {
 
     const loan = await createLoan(request, book.id, borrower.id);
     const rA = await createReservation(request, book.id, reserverA.id);
-    await sleep(60); // ensure deterministic createdAt ordering
+    await waitForNextSecond(); // createdAt has second precision — rB must land in a later second
     const rB = await createReservation(request, book.id, reserverB.id);
 
     await returnLoan(request, loan.id);
@@ -56,9 +56,9 @@ test.describe("Waitlist Promotion @api", () => {
     const loanB = await createLoan(request, book.id, borrowerB.id);
 
     const r1 = await createReservation(request, book.id, r1m.id);
-    await sleep(40);
+    await waitForNextSecond();
     const r2 = await createReservation(request, book.id, r2m.id);
-    await sleep(40);
+    await waitForNextSecond();
     const r3 = await createReservation(request, book.id, r3m.id);
 
     await returnLoan(request, loanA.id);
@@ -81,7 +81,7 @@ test.describe("Waitlist Promotion @api", () => {
 
     const loan = await createLoan(request, book.id, borrower.id);
     const rA = await createReservation(request, book.id, reserverA.id);
-    await sleep(40);
+    await waitForNextSecond();
     const rB = await createReservation(request, book.id, reserverB.id);
 
     // cancel the oldest one

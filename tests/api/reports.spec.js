@@ -76,25 +76,61 @@ test.describe("Reports @api", () => {
 
   // TC-G7-019
   test("TC-G7-019 top-borrowed books are sorted in descending order", async ({ request }) => {
-    const res = await request.get("/api/reports/books/top");
+    // Fixture from the test plan: three books with 4, 2 and 1 loans.
+    // Borrow/return cycles by the same member make the single copy available again.
+    const member = await createMember(request);
+    const [book4, book2, book1] = await Promise.all([
+      createBook(request, { totalCopies: 1 }),
+      createBook(request, { totalCopies: 1 }),
+      createBook(request, { totalCopies: 1 }),
+    ]);
+    for (const [book, cycles] of [[book4, 4], [book2, 2], [book1, 1]]) {
+      for (let i = 0; i < cycles; i++) {
+        const loan = await createLoan(request, book.id, member.id);
+        await returnLoan(request, loan.id);
+      }
+    }
+
+    const res = await request.get("/api/reports/books/top?limit=500");
     expect(res.status()).toBe(200);
     const top = await res.json();
     expect(Array.isArray(top)).toBe(true);
 
-    // Check descending by loan count (any field name candidate)
+    // Exact loan counts for the fixture books
+    const entry = (b) => top.find((e) => e.id === b.id);
+    expect(entry(book4)?.loanCount).toBe(4);
+    expect(entry(book2)?.loanCount).toBe(2);
+    expect(entry(book1)?.loanCount).toBe(1);
+
+    // Relative order: 4 loans before 2 loans before 1 loan
+    const idx = (b) => top.findIndex((e) => e.id === b.id);
+    expect(idx(book4)).toBeLessThan(idx(book2));
+    expect(idx(book2)).toBeLessThan(idx(book1));
+
+    // Global invariant: the whole list is sorted descending by loanCount
     for (let i = 1; i < top.length; i++) {
-      const prev = top[i - 1].loanCount ?? top[i - 1].borrowCount ?? top[i - 1].count;
-      const curr = top[i].loanCount ?? top[i].borrowCount ?? top[i].count;
-      expect(prev).toBeGreaterThanOrEqual(curr);
+      expect(top[i - 1].loanCount).toBeGreaterThanOrEqual(top[i].loanCount);
     }
   });
 
   // TC-G7-020
   test("TC-G7-020 top-borrowed books respect the limit parameter", async ({ request }) => {
+    // Fixture from the test plan: at least three books with loans, so the
+    // limit must actually truncate and exactly 2 entries come back.
+    const member = await createMember(request);
+    const books = await Promise.all([
+      createBook(request, { totalCopies: 1 }),
+      createBook(request, { totalCopies: 1 }),
+      createBook(request, { totalCopies: 1 }),
+    ]);
+    for (const book of books) {
+      await createLoan(request, book.id, member.id);
+    }
+
     const res = await request.get("/api/reports/books/top?limit=2");
     expect(res.status()).toBe(200);
     const top = await res.json();
-    expect(top.length).toBeLessThanOrEqual(2);
+    expect(top.length).toBe(2);
   });
 
   // TC-G7-021
